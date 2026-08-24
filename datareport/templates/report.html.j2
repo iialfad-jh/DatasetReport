@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ report.title }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.45; margin: 2rem auto; max-width: 1100px; padding: 0 1rem; color: #222; }
+    h1 { margin-bottom: .25rem; }
+    .summary { background: #f5f7fa; border: 1px solid #d9e0e7; padding: 1rem; margin: 1.5rem 0; }
+    .file { border-top: 1px solid #d9e0e7; padding: 1.25rem 0; }
+    table { border-collapse: collapse; width: 100%; margin-top: .75rem; }
+    th, td { border: 1px solid #d9e0e7; padding: .5rem; text-align: left; vertical-align: top; }
+    th { background: #f5f7fa; }
+    code { white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <h1>{{ report.title }}</h1>
+  <p>Total files: <strong>{{ report.files | length }}</strong></p>
+
+  <section class="summary">
+    <h2>AI Summary</h2>
+    <p>{{ report.ai_summary }}</p>
+  </section>
+
+  {% if report.files %}
+    {% for file in report.files %}
+      <section class="file">
+        <h2>{{ file.file_name }}</h2>
+        <p>Type: {{ file.file_type }} | Rows: {{ file.row_count }} | Columns: {{ file.column_count }}</p>
+        <table>
+          <thead>
+            <tr><th>Column</th><th>dtype</th><th>Missing</th><th>Missing rate</th><th>Sample values</th></tr>
+          </thead>
+          <tbody>
+          {% for column in file.columns %}
+            <tr>
+              <td>{{ column.name }}</td>
+              <td>{{ column.dtype }}</td>
+              <td>{{ column.missing_count }}</td>
+              <td>{{ "%.2f" | format(column.missing_rate * 100) }}%</td>
+              <td><code>{{ column.sample_values | join(", ") }}</code></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    {% endfor %}
+  {% else %}
+    <p>No supported data files were found.</p>
+  {% endif %}
+</body>
+</html>
+

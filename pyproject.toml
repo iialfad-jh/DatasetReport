@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datasetreport"
+version = "0.1.0"
+description = "Generate a basic HTML report for tabular dataset folders"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "Jinja2>=3.1",
+  "pandas>=2.0",
+  "pydantic>=2.0",
+  "typer>=0.9",
+  "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+charts = ["plotly>=5.0"]
+
+[project.scripts]
+datareport = "datareport.cli:app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

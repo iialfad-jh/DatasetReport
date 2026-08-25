@@ -15,3 +15,12 @@ def test_scan_folder_only_supported_non_hidden_files(tmp_path: Path) -> None:
 
     assert scan_folder(tmp_path) == [tmp_path / "book.xlsx", tmp_path / "data.csv"]
 
+
+def test_scan_folder_rejects_missing_directory(tmp_path: Path) -> None:
+    missing = tmp_path / "missing"
+    try:
+        scan_folder(missing)
+    except NotADirectoryError:
+        pass
+    else:
+        raise AssertionError("scan_folder should reject a missing directory")

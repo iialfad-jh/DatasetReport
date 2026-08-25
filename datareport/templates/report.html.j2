@@ -9,6 +9,8 @@
     h1 { margin-bottom: .25rem; }
     .summary { background: #f5f7fa; border: 1px solid #d9e0e7; padding: 1rem; margin: 1.5rem 0; }
     .file { border-top: 1px solid #d9e0e7; padding: 1.25rem 0; }
+    .warning { color: #8a4b00; background: #fff8e6; border-color: #e9c46a; }
+    .muted { color: #5f6b76; font-size: .9rem; }
     table { border-collapse: collapse; width: 100%; margin-top: .75rem; }
     th, td { border: 1px solid #d9e0e7; padding: .5rem; text-align: left; vertical-align: top; }
     th { background: #f5f7fa; }
@@ -17,7 +19,7 @@
 </head>
 <body>
   <h1>{{ report.title }}</h1>
-  <p>Total files: <strong>{{ report.files | length }}</strong></p>
+  <p>Total files: <strong>{{ report.files | length }}</strong> | Failed files: <strong>{{ report.failed_files | length }}</strong></p>
 
   <section class="summary">
     <h2>AI Summary</h2>
@@ -28,10 +30,11 @@
     {% for file in report.files %}
       <section class="file">
         <h2>{{ file.file_name }}</h2>
-        <p>Type: {{ file.file_type }} | Rows: {{ file.row_count }} | Columns: {{ file.column_count }}</p>
+        <p>Type: {{ file.file_type }} | Rows: {{ file.row_count }} | Columns: {{ file.column_count }} | Duplicate rows in analyzed data: {{ file.duplicate_row_count }}</p>
+        {% if file.is_sampled %}<p class="muted">Detailed column statistics use the first {{ file.analyzed_row_count }} rows.</p>{% endif %}
         <table>
           <thead>
-            <tr><th>Column</th><th>dtype</th><th>Missing</th><th>Missing rate</th><th>Sample values</th></tr>
+            <tr><th>Column</th><th>dtype</th><th>Missing</th><th>Unique</th><th>Quality</th><th>Numeric / text stats</th><th>Sample values</th></tr>
           </thead>
           <tbody>
           {% for column in file.columns %}
@@ -40,6 +43,9 @@
               <td>{{ column.dtype }}</td>
               <td>{{ column.missing_count }}</td>
               <td>{{ "%.2f" | format(column.missing_rate * 100) }}%</td>
+              <td>{{ column.unique_count }} ({{ "%.2f" | format(column.unique_rate * 100) }}%)</td>
+              <td>{% if column.is_empty %}empty{% elif column.is_constant %}constant{% elif column.missing_count %}missing values{% else %}ok{% endif %}</td>
+              <td>{% if column.mean is not none %}min={{ column.min_value }}, max={{ column.max_value }}, mean={{ "%.2f" | format(column.mean) }}, median={{ "%.2f" | format(column.median) }}{% elif column.mean_length is not none %}length {{ column.min_length }}-{{ column.max_length }}, avg {{ "%.2f" | format(column.mean_length) }}{% else %}-{% endif %}</td>
               <td><code>{{ column.sample_values | join(", ") }}</code></td>
             </tr>
           {% endfor %}
@@ -50,6 +56,12 @@
   {% else %}
     <p>No supported data files were found.</p>
   {% endif %}
+
+  {% if report.failed_files %}
+    <section class="summary warning">
+      <h2>Files that could not be processed</h2>
+      <ul>{% for failed in report.failed_files %}<li><strong>{{ failed.file_name }}</strong>: {{ failed.error }}</li>{% endfor %}</ul>
+    </section>
+  {% endif %}
 </body>
 </html>
-

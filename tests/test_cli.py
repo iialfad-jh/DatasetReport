@@ -1,0 +1,20 @@
+from pathlib import Path
+
+from typer.testing import CliRunner
+
+from datareport.cli import app
+
+
+def test_cli_continues_when_one_file_fails(tmp_path: Path) -> None:
+    (tmp_path / "valid.csv").write_text("value\n1\n", encoding="utf-8")
+    (tmp_path / "broken.csv").write_bytes(b"\xff\xfe\x00")
+    output = tmp_path / "report.html"
+
+    result = CliRunner().invoke(app, [str(tmp_path), "--out", str(output)])
+
+    assert result.exit_code == 0
+    assert output.exists()
+    html = output.read_text(encoding="utf-8")
+    assert "valid.csv" in html
+    assert "broken.csv" in html
+    assert "could not be processed" in html

@@ -18,3 +18,20 @@ def test_cli_continues_when_one_file_fails(tmp_path: Path) -> None:
     assert "valid.csv" in html
     assert "broken.csv" in html
     assert "could not be processed" in html
+
+
+def test_cli_renders_overview_and_quality_columns(tmp_path: Path) -> None:
+    (tmp_path / "quality.csv").write_text(
+        "record_id,value\na,1\nb,\nc,3\n", encoding="utf-8"
+    )
+    output = tmp_path / "report.html"
+
+    result = CliRunner().invoke(app, [str(tmp_path), "--out", str(output)])
+
+    assert result.exit_code == 0
+    html = output.read_text(encoding="utf-8")
+    assert "Dataset overview" in html
+    assert "Missing count" in html
+    assert "Missing rate" in html
+    assert "Possible identifier" in html
+    assert "High missing rate" in html

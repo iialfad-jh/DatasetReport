@@ -33,6 +33,7 @@ class ColumnProfile(BaseModel):
     mean_length: float | None = Field(default=None, ge=0)
     is_empty: bool = False
     is_constant: bool = False
+    quality_flags: list[str] = Field(default_factory=list)
     sample_values: list[object] = Field(default_factory=list)
 
 
@@ -63,3 +64,21 @@ class DatasetReport(BaseModel):
     files: list[FileProfile] = Field(default_factory=list)
     failed_files: list[FileError] = Field(default_factory=list)
     ai_summary: str = ""
+
+    @property
+    def total_rows(self) -> int:
+        """Return the combined row count of successfully profiled files."""
+
+        return sum(profile.row_count for profile in self.files)
+
+    @property
+    def total_columns(self) -> int:
+        """Return the combined column count of successfully profiled files."""
+
+        return sum(profile.column_count for profile in self.files)
+
+    @property
+    def quality_column_count(self) -> int:
+        """Return how many columns have one or more quality flags."""
+
+        return sum(bool(column.quality_flags) for profile in self.files for column in profile.columns)

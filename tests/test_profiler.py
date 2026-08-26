@@ -40,3 +40,23 @@ def test_profile_csv_keeps_total_rows_when_sampling(tmp_path: Path) -> None:
     assert profile.is_sampled is True
     assert profile.duplicate_row_count == 0
     assert profile.columns[0].sample_values == [1, 2]
+
+
+def test_profile_csv_adds_actionable_quality_flags(tmp_path: Path) -> None:
+    path = tmp_path / "quality.csv"
+    pd.DataFrame(
+        {
+            "record_id": ["a", "b", "c", "d", "e"],
+            "constant": [1, 1, 1, 1, 1],
+            "mostly_missing": [None, None, None, "value", None],
+            "empty": [None, None, None, None, None],
+        }
+    ).to_csv(path, index=False)
+
+    profile = profile_file(path)
+    flags = {column.name: column.quality_flags for column in profile.columns}
+
+    assert flags["record_id"] == ["Possible identifier"]
+    assert flags["constant"] == ["Constant value"]
+    assert flags["mostly_missing"] == ["Constant value", "High missing rate"]
+    assert flags["empty"] == ["Empty column"]

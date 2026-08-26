@@ -8,6 +8,9 @@
     body { font-family: system-ui, sans-serif; line-height: 1.45; margin: 2rem auto; max-width: 1100px; padding: 0 1rem; color: #222; }
     h1 { margin-bottom: .25rem; }
     .summary { background: #f5f7fa; border: 1px solid #d9e0e7; padding: 1rem; margin: 1.5rem 0; }
+    .overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; margin: 1.5rem 0; }
+    .metric { border: 1px solid #d9e0e7; padding: .75rem; }
+    .metric strong { display: block; font-size: 1.4rem; }
     .file { border-top: 1px solid #d9e0e7; padding: 1.25rem 0; }
     .warning { color: #8a4b00; background: #fff8e6; border-color: #e9c46a; }
     .muted { color: #5f6b76; font-size: .9rem; }
@@ -15,11 +18,18 @@
     th, td { border: 1px solid #d9e0e7; padding: .5rem; text-align: left; vertical-align: top; }
     th { background: #f5f7fa; }
     code { white-space: pre-wrap; word-break: break-word; }
+    .flag { display: inline-block; background: #fff1d6; border: 1px solid #e9c46a; color: #754c00; margin: 0 .25rem .25rem 0; padding: .1rem .35rem; }
   </style>
 </head>
 <body>
   <h1>{{ report.title }}</h1>
-  <p>Total files: <strong>{{ report.files | length }}</strong> | Failed files: <strong>{{ report.failed_files | length }}</strong></p>
+  <section class="overview" aria-label="Dataset overview">
+    <div class="metric">Files<strong>{{ report.files | length }}</strong></div>
+    <div class="metric">Rows<strong>{{ report.total_rows }}</strong></div>
+    <div class="metric">Columns<strong>{{ report.total_columns }}</strong></div>
+    <div class="metric">Flagged columns<strong>{{ report.quality_column_count }}</strong></div>
+    <div class="metric">Failed files<strong>{{ report.failed_files | length }}</strong></div>
+  </section>
 
   <section class="summary">
     <h2>AI Summary</h2>
@@ -34,7 +44,7 @@
         {% if file.is_sampled %}<p class="muted">Detailed column statistics use the first {{ file.analyzed_row_count }} rows.</p>{% endif %}
         <table>
           <thead>
-            <tr><th>Column</th><th>dtype</th><th>Missing</th><th>Unique</th><th>Quality</th><th>Numeric / text stats</th><th>Sample values</th></tr>
+            <tr><th>Column</th><th>dtype</th><th>Missing count</th><th>Missing rate</th><th>Unique values</th><th>Quality flags</th><th>Numeric / text stats</th><th>Sample values</th></tr>
           </thead>
           <tbody>
           {% for column in file.columns %}
@@ -44,7 +54,7 @@
               <td>{{ column.missing_count }}</td>
               <td>{{ "%.2f" | format(column.missing_rate * 100) }}%</td>
               <td>{{ column.unique_count }} ({{ "%.2f" | format(column.unique_rate * 100) }}%)</td>
-              <td>{% if column.is_empty %}empty{% elif column.is_constant %}constant{% elif column.missing_count %}missing values{% else %}ok{% endif %}</td>
+              <td>{% if column.quality_flags %}{% for flag in column.quality_flags %}<span class="flag">{{ flag }}</span>{% endfor %}{% else %}ok{% endif %}</td>
               <td>{% if column.mean is not none %}min={{ column.min_value }}, max={{ column.max_value }}, mean={{ "%.2f" | format(column.mean) }}, median={{ "%.2f" | format(column.median) }}{% elif column.mean_length is not none %}length {{ column.min_length }}-{{ column.max_length }}, avg {{ "%.2f" | format(column.mean_length) }}{% else %}-{% endif %}</td>
               <td><code>{{ column.sample_values | join(", ") }}</code></td>
             </tr>

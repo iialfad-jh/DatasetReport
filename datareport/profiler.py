@@ -9,6 +9,9 @@ import pandas as pd
 
 from .schema import ColumnProfile, FileProfile, ValueCount
 
+HIGH_MISSING_RATE = 0.2
+IDENTIFIER_NAME_PARTS = ("id", "uuid", "guid", "key", "code")
+
 
 def _read_sample(path: Path, sample_rows: int) -> tuple[pd.DataFrame, int]:
     """Read at most *sample_rows* for analysis while counting all CSV rows."""
@@ -60,6 +63,27 @@ def _numeric_value(value: Any) -> float | None:
     return float(value)
 
 
+def _quality_flags(profile: ColumnProfile) -> list[str]:
+    """Return actionable quality labels for a column profile."""
+
+    if profile.is_empty:
+        return ["Empty column"]
+
+    flags = []
+    if profile.is_constant:
+        flags.append("Constant value")
+    if profile.missing_rate >= HIGH_MISSING_RATE:
+        flags.append("High missing rate")
+    elif profile.missing_count:
+        flags.append("Missing values")
+
+    normalized_name = profile.name.lower()
+    looks_like_identifier = any(part in normalized_name for part in IDENTIFIER_NAME_PARTS)
+    if looks_like_identifier and profile.analyzed_count >= 2 and profile.unique_rate >= 0.98:
+        flags.append("Possible identifier")
+    return flags
+
+
 def _column_profile(name: Any, series: pd.Series) -> ColumnProfile:
     analyzed_count = len(series)
     missing_count = int(series.isna().sum())
@@ -98,6 +122,7 @@ def _column_profile(name: Any, series: pd.Series) -> ColumnProfile:
             profile.min_length = int(lengths.min())
             profile.max_length = int(lengths.max())
             profile.mean_length = float(lengths.mean())
+    profile.quality_flags = _quality_flags(profile)
     return profile
 
 

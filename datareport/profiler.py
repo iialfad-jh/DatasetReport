@@ -11,6 +11,26 @@ from .schema import ColumnProfile, FileProfile, ValueCount
 
 HIGH_MISSING_RATE = 0.2
 IDENTIFIER_NAME_PARTS = ("id", "uuid", "guid", "key", "code")
+CSV_ENCODINGS = ("utf-8", "utf-8-sig", "gb18030")
+
+
+def _read_csv_sample(path: Path, sample_rows: int, encoding: str) -> tuple[pd.DataFrame, int]:
+    """Read a CSV using *encoding*, retaining full row counts for sampling."""
+
+    chunks: list[pd.DataFrame] = []
+    row_count = 0
+    analyzed_rows = 0
+    chunk_size = max(1000, min(sample_rows or 1000, 10000))
+    for chunk in pd.read_csv(path, chunksize=chunk_size, encoding=encoding):
+        row_count += len(chunk)
+        if analyzed_rows < sample_rows:
+            remaining = sample_rows - analyzed_rows
+            selected = chunk.head(remaining)
+            chunks.append(selected)
+            analyzed_rows += len(selected)
+    if chunks:
+        return pd.concat(chunks, ignore_index=True), row_count
+    return pd.read_csv(path, nrows=0, encoding=encoding), row_count
 
 
 def _read_sample(path: Path, sample_rows: int) -> tuple[pd.DataFrame, int]:
@@ -23,20 +43,14 @@ def _read_sample(path: Path, sample_rows: int) -> tuple[pd.DataFrame, int]:
     if suffix != ".csv":
         raise ValueError(f"Unsupported file type: {path.suffix}")
 
-    chunks: list[pd.DataFrame] = []
-    row_count = 0
-    analyzed_rows = 0
-    chunk_size = max(1000, min(sample_rows or 1000, 10000))
-    for chunk in pd.read_csv(path, chunksize=chunk_size):
-        row_count += len(chunk)
-        if analyzed_rows < sample_rows:
-            remaining = sample_rows - analyzed_rows
-            selected = chunk.head(remaining)
-            chunks.append(selected)
-            analyzed_rows += len(selected)
-    if chunks:
-        return pd.concat(chunks, ignore_index=True), row_count
-    return pd.read_csv(path, nrows=0), row_count
+    last_error: UnicodeDecodeError | None = None
+    for encoding in CSV_ENCODINGS:
+        try:
+            return _read_csv_sample(path, sample_rows, encoding)
+        except UnicodeDecodeError as exc:
+            last_error = exc
+    assert last_error is not None
+    raise last_error
 
 
 def _sample_value(value: Any) -> object:

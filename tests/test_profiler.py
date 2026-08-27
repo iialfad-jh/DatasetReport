@@ -29,6 +29,17 @@ def test_profile_csv_returns_shape_and_columns(tmp_path: Path) -> None:
     assert profile.columns[1].is_constant is False
 
 
+def test_profile_csv_falls_back_to_gb18030_for_chinese_data(tmp_path: Path) -> None:
+    path = tmp_path / "chinese.csv"
+    path.write_bytes("姓名,城市\n小明,北京\n小红,上海\n".encode("gb18030"))
+
+    profile = profile_file(path)
+
+    assert [column.name for column in profile.columns] == ["姓名", "城市"]
+    assert profile.columns[0].sample_values == ["小明", "小红"]
+    assert profile.row_count == 2
+
+
 def test_profile_csv_keeps_total_rows_when_sampling(tmp_path: Path) -> None:
     path = tmp_path / "numbers.csv"
     pd.DataFrame({"value": [1, 2, 2, 3, 4]}).to_csv(path, index=False)

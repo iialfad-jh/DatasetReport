@@ -35,3 +35,16 @@ def test_cli_renders_overview_and_quality_columns(tmp_path: Path) -> None:
     assert "Missing rate" in html
     assert "Possible identifier" in html
     assert "High missing rate" in html
+
+
+def test_cli_renders_duplicate_rate(tmp_path: Path) -> None:
+    (tmp_path / "duplicates.csv").write_text(
+        "value\na\na\nb\nb\n", encoding="utf-8"
+    )
+    output = tmp_path / "report.html"
+
+    result = CliRunner().invoke(app, [str(tmp_path), "--out", str(output)])
+
+    assert result.exit_code == 0
+    html = output.read_text(encoding="utf-8")
+    assert "Duplicate rows in analyzed data: 2 (50.00%)" in html

@@ -40,7 +40,7 @@
     {% for file in report.files %}
       <section class="file">
         <h2>{{ file.file_name }}</h2>
-        <p>Type: {{ file.file_type }} | Rows: {{ file.row_count }} | Columns: {{ file.column_count }} | Duplicate rows in analyzed data: {{ file.duplicate_row_count }}</p>
+        <p>Type: {{ file.file_type }} | Rows: {{ file.row_count }} | Columns: {{ file.column_count }} | Duplicate rows in analyzed data: {{ file.duplicate_row_count }} ({{ "%.2f" | format(file.duplicate_rate * 100) }}%)</p>
         {% if file.is_sampled %}<p class="muted">Detailed column statistics use the first {{ file.analyzed_row_count }} rows.</p>{% endif %}
         <table>
           <thead>

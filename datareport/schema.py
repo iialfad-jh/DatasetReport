@@ -49,6 +49,14 @@ class FileProfile(BaseModel):
     duplicate_row_count: int = Field(ge=0)
     columns: list[ColumnProfile] = Field(default_factory=list)
 
+    @property
+    def duplicate_rate(self) -> float:
+        """Return the duplicate-row share within the analyzed rows."""
+
+        if self.analyzed_row_count == 0:
+            return 0.0
+        return self.duplicate_row_count / self.analyzed_row_count
+
 
 class FileError(BaseModel):
     """A file that could not be read or profiled."""

@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from datareport.profiler import profile_file
+from datareport.schema import FileProfile
 
 
 def test_profile_csv_returns_shape_and_columns(tmp_path: Path) -> None:
@@ -51,6 +52,29 @@ def test_profile_csv_keeps_total_rows_when_sampling(tmp_path: Path) -> None:
     assert profile.is_sampled is True
     assert profile.duplicate_row_count == 0
     assert profile.columns[0].sample_values == [1, 2]
+
+
+def test_profile_csv_exposes_duplicate_rate_for_analyzed_rows(tmp_path: Path) -> None:
+    path = tmp_path / "duplicates.csv"
+    pd.DataFrame({"value": ["a", "a", "b", "b"]}).to_csv(path, index=False)
+
+    profile = profile_file(path)
+
+    assert profile.duplicate_row_count == 2
+    assert profile.duplicate_rate == 0.5
+
+
+def test_duplicate_rate_is_zero_when_no_rows_were_analyzed() -> None:
+    profile = FileProfile(
+        file_name="empty.csv",
+        file_type="csv",
+        row_count=0,
+        column_count=0,
+        analyzed_row_count=0,
+        duplicate_row_count=0,
+    )
+
+    assert profile.duplicate_rate == 0.0
 
 
 def test_profile_csv_adds_actionable_quality_flags(tmp_path: Path) -> None:

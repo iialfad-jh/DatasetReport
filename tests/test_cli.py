@@ -48,3 +48,16 @@ def test_cli_renders_duplicate_rate(tmp_path: Path) -> None:
     assert result.exit_code == 0
     html = output.read_text(encoding="utf-8")
     assert "Duplicate rows in analyzed data: 2 (50.00%)" in html
+
+
+def test_cli_renders_numeric_standard_deviation(tmp_path: Path) -> None:
+    (tmp_path / "numbers.csv").write_text(
+        "value\n1\n2\n3\n", encoding="utf-8"
+    )
+    output = tmp_path / "report.html"
+
+    result = CliRunner().invoke(app, [str(tmp_path), "--out", str(output)])
+
+    assert result.exit_code == 0
+    html = output.read_text(encoding="utf-8")
+    assert "std=0.82" in html

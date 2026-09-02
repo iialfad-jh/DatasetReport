@@ -55,7 +55,7 @@
               <td>{{ "%.2f" | format(column.missing_rate * 100) }}%</td>
               <td>{{ column.unique_count }} ({{ "%.2f" | format(column.unique_rate * 100) }}%)</td>
               <td>{% if column.quality_flags %}{% for flag in column.quality_flags %}<span class="flag">{{ flag }}</span>{% endfor %}{% else %}ok{% endif %}</td>
-              <td>{% if column.mean is not none %}min={{ column.min_value }}, max={{ column.max_value }}, mean={{ "%.2f" | format(column.mean) }}, median={{ "%.2f" | format(column.median) }}{% elif column.mean_length is not none %}length {{ column.min_length }}-{{ column.max_length }}, avg {{ "%.2f" | format(column.mean_length) }}{% else %}-{% endif %}</td>
+              <td>{% if column.mean is not none %}min={{ column.min_value }}, max={{ column.max_value }}, mean={{ "%.2f" | format(column.mean) }}, median={{ "%.2f" | format(column.median) }}, std={{ "%.2f" | format(column.std) }}{% elif column.mean_length is not none %}length {{ column.min_length }}-{{ column.max_length }}, avg {{ "%.2f" | format(column.mean_length) }}{% else %}-{% endif %}</td>
               <td><code>{{ column.sample_values | join(", ") }}</code></td>
             </tr>
           {% endfor %}

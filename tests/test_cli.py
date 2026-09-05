@@ -61,3 +61,17 @@ def test_cli_renders_numeric_standard_deviation(tmp_path: Path) -> None:
     assert result.exit_code == 0
     html = output.read_text(encoding="utf-8")
     assert "std=0.82" in html
+
+
+def test_cli_renders_top_value_counts(tmp_path: Path) -> None:
+    (tmp_path / "categories.csv").write_text(
+        "category\na\na\nb\n", encoding="utf-8"
+    )
+    output = tmp_path / "report.html"
+
+    result = CliRunner().invoke(app, [str(tmp_path), "--out", str(output)])
+
+    assert result.exit_code == 0
+    html = output.read_text(encoding="utf-8")
+    assert "Top values" in html
+    assert "a (2)" in html
